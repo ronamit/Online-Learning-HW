@@ -1,0 +1,279 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[colorinlistoftodos]{todonotes}
+% Additional Packages
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\usepackage{wrapfig}
+\usepackage{amssymb}
+\usepackage{subfigure}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{amsthm}
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{mathtools}
+\usepackage{thmtools}
+\usepackage{thm-restate}
+\usepackage[title]{appendix}
+\usepackage{comment}
+\usepackage{dsfont}
+\usepackage{times}
+\usepackage{float}
+\usepackage{natbib}
+\usepackage{thmtools}
+\usepackage{thm-restate}
+
+\newtheorem{corollary}{Corollary}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% macros
+
+% Math Operators
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\Argmin}{Argmin}
+\DeclareMathOperator*{\Argmax}{Argmax}
+
+% Comments
+\newcommand{\nm}[1]{\textcolor{red}{\{Nadav: #1\}}}
+\newcommand{\ra}[1]{\textcolor{blue}{\{Ron: #1\}}}
+
+%  Parenthesis
+% macros
+\DeclarePairedDelimiter\br{(}{)}% ( )
+\DeclarePairedDelimiter\brs{[}{]}% [ ]
+\DeclarePairedDelimiter\brc{\{}{\}}% { }
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}% | |
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}% || ||
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}% | |
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}% || ||
+\DeclarePairedDelimiter\innorm{\langle}{\rangle}% < >
+
+
+
+
+\def\eqdef{:=}
+\def\VAR{\mathrm{Var}}
+\def\Regret{\mathrm{Regret}}
+% \newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Kcal}{\mathcal{K}}
+\newcommand{\Reg}{\text{Reg}}
+\newcommand{\RegPlus}[1]{{ \brs*{\Reg_{t-1}(#1)}_{+} }}
+\newcommand{\fTilde}{\tilde{f}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Problem Set 1 \\ Introduction to Online Learning 048717}
+\author{Ron Amit, 300804770 }
+
+\begin{document}
+
+\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+I consulted with Nadav Merlis about all problems
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Question 1 (Doubling Trick)}
+
+\paragraph{(a)}
+Up to $T$,  $T_0$ is doubled $\ceil{\log_2 T}-1$ times (there are $\ceil{\log_2 T}$ intervals).
+Denote $T_k, k=1,2,...$ the value of the variable $T_0$ at the $k$-th interval. According to the algorithm we have $T_k = 2^k$.
+
+Denote $\tau_k$, the  $k$-th interval length, $\tau_k = 2^{k+1}-2^{k} = 2^{k}, k=1,2,...$.
+The learning rate at interval $k$ is $\eta_k := \sqrt{\log N 2^{-k}}$.
+Within in each interval $k$, the regret is bounded by $\frac{\log N}{\eta_k} + \eta_k B_{\tau_k}$
+where $ B_{\tau_k} := \tau_k = 2^k$ in our case.
+Therefore, the total regret is bounded by
+\begin{align*}
+\Reg_T &\leq \sum_{k=1}^{\ceil{\log_2 T}} \brs*{ \frac{\log N}{\eta_k} + \eta_k B_{\tau_k} }
+            = \sum_{k=1}^{\ceil{\log_2 T}} \brs*{\sqrt{\log N}  2^{k/2} +  \sqrt{\log N}  2^{-k/2} B_{2^k}} \\
+    &=  \sqrt{\log N} \brs*{ \sum_{k=1}^{\ceil{\log_2 T}} 2^{k/2}  + \sum_{k=1}^{\ceil{\log_2 T}} 2^{-k/2}2^k} = 2 \sqrt{\log N}  \sum_{k=1}^{\ceil{\log_2 T}} 2^{k/2}\\
+    &  \leq   2 \sqrt{\log N} 2^{1/2} \frac{2^{0.5 (\log_2 T + 1)}-1}{\sqrt{2}-1}  \\
+    & =\frac{2\sqrt{2}}{\sqrt{2}-1} \sqrt{\log N} \br*{\sqrt{2T}-1}  = O (\sqrt{T \log N })
+\end{align*}
+
+\paragraph{(b)}
+According to the analysis above, the regret guaranteed is 
+$O(\sqrt{\log N } \brs*{\sqrt{T} +  \sum_{k=0}^{\ceil{\log_2 T}} 2^{-k/2} B_{2^k}})$
+this defines the condition on $B_T$ .
+Notice that if  $B_T \in O(T)$, then we still get a regret of $ O (\sqrt{T \log N })$.
+Otherwise, the regret is defined by the second term.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Question 2 (Regret Matching)}
+
+\paragraph{(a)}
+If $\Reg_{t-1}(i) \geq 0$, then obviously an equality holds.
+Otherwise, the the RHS becomes $r^2_t(i)$, while the LHS is $0$, so the inequality holds.
+
+
+\paragraph{(b)}
+\begin{align*} 
+\Phi_t & = \sum_{i=1}^N  \brs*{\Reg_t(i)}_{+}^2 \leq  \sum_{i=1}^N \brc*{  \RegPlus{i}^2 + 2  \RegPlus{i} r_t(i) + r^2_t(i) }\\
+& =  \Phi_{t-1} +  \sum_{i=1}^N  \brc*{ 2 \brs*{\Reg_{t-1}(i)}_{+} r_t(i)   + r^2_t(i) }\\
+\ & \stackrel{(1)}{\leq}  \Phi_{t-1} +  \sum_{i=1}^N  \brc*{ 2  \RegPlus{i} r_t(i)   + 1 }\\
+\ & =  \Phi_{t-1} +  N  + 2\sum_{i=1}^N     \RegPlus{i} \br*{p_t^\top\ell_t-\ell_t(i)}   \\
+\ & =  \Phi_{t-1} +  N  + 2\sum_{i=1}^N     \RegPlus{i} \br*{ \sum_{j=1}^N p_t(j) \ell_t(j) -\ell_t(i)}   \\
+\ & \stackrel{(2)}{=} \Phi_{t-1} +  N  + 2\sum_{i=1}^N     u_i \br*{ \sum_{j=1}^N  \frac{ u_j}{ \sum_{k=1}^N u_k} \ell_t(j) -\ell_t(i)}   \\
+& = \Phi_{t-1} +  N + 2\sum_{i=1}^N u_i \br*{\frac{\sum_{j=1}^N   u_j \ell_t(j)  - \sum_{k=1}^N u_k \ell_t(i)}{\sum_{k=1}^N u_k}} \\
+& = \Phi_{t-1} +  N + 2 \br*{\frac{\sum_{i=1}^N u_i \sum_{j=1}^N   u_j \ell_t(j)  - \sum_{i=1}^N u_i \sum_{k=1}^N u_k \ell_t(i)}{\sum_{k=1}^N u_k}}\\
+& \stackrel{(3)}{=} \Phi_{t-1} +  N + 2 \br*{\frac{\sum_{i=1}^N \sum_{j=1}^N   u_i  u_j \ell_t(j)  -  \sum_{k=1}^N \sum_{i=1}^N u_i u_k \ell_t(i)}{\sum_{k=1}^N u_k}} \\
+& \stackrel{(4)}{=} \Phi_{t-1} +  N 
+\end{align*}
+Where in (1) we used the fact that $\ell_t(k) \in [0,1], \forall t,k$, and therefore
+\begin{equation*}
+    r_t(i)=p_t^\top\ell_t-\ell_t(i) = \sum_{j=1}^{N}p_t(j)\ell_t(j)  - \ell_t(i) \leq \sum_{j=1}^{N}p_t(j) = 1.
+\end{equation*}
+In  (2) we defined $u_m := \RegPlus{m}, \forall m \in [N]$ and used the definition of $p_t(m)$.
+In (3) we changed summation order.
+In (4) we used the fact that the numerator is $0$.
+
+\paragraph{(c)}
+Define $\Phi_0:=0$.
+Notice that
+\begin{align*} 
+\Phi_T - \Phi_0 = \sum_{t=1}^{T}\br*{ \Phi_{t}-\Phi_{t-1}}  \stackrel{(1)}{\leq} \sum_{t=1}^{T} N = T N
+\end{align*}
+Where (1) is according to (b).
+Therefore
+\begin{align*} 
+\sum_{i=1}^{N} \brs*{\Reg_T(i)}_{+}^2  = \Phi_T \leq T N \\
+\sum_{i=1}^{N} \frac{1}{N} \brs*{\Reg_T(i)}_{+}^2  \leq T 
+\end{align*}
+Notice that $f(x)=x^2$ and $f(x)=\max \brc*{x,0}$ are convex functions (and so also their composition). 
+Therefore, according to Jensen's inequality
+\begin{align*} 
+\brs*{\sum_{i=1}^{N} \frac{1}{N} \Reg_T(i)}_{+}^2 \leq \sum_{i=1}^{N} \frac{1}{N} \brs*{\Reg_T(i)}_{+}^2  \leq T  \\
+\brs*{\sum_{i=1}^{N} \Reg_T(i)}_{+} \leq \sqrt{NT}
+ \\
+\sum_{i=1}^{N} \Reg_T(i) \leq \sqrt{NT}
+ \\
+\Reg_T = \max_{i \in [N]}  \Reg_T(i)  \leq \sum_{i=1}^{N} \Reg_T(i) \leq \sqrt{NT}
+\end{align*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Question 3 (OGD with changing Learning Rate)}
+\paragraph{(a)}
+We can repeat the steps from class
+
+\begin{align*}
+    \norm*{x_{t+1}-x}^2 &=  \norm*{\Pi (x_{t} - \eta_t g_t)-x}^2
+    \leq  \norm*{ x_{t} - \eta_t g_t-x}^2 \\
+    &=  \norm*{x_t-x}^2 + \eta_t^2\norm*{g_t}^2 -2\eta_t g_t^\top(x_t-x)
+\end{align*}
+
+Rearranging we get
+
+\begin{align*}
+g_t^\top(x_t-x) &\leq \frac{1}{2\eta_t} \br*{\norm*{x_{t+1}-x}^2 - \norm*{x_t-x}^2 } + \frac{\eta_t}{2} \norm*{g_t}^2 \\
+& \leq \frac{1}{2\eta_T} \br*{\norm*{x_{t+1}-x}^2 - \norm*{x_t-x}^2 }+ \frac{\eta_t}{2}  \norm*{g_t}^2 \\
+\end{align*}
+Where in the last inequality we used the fact that the learning rate sequence is non-increasing.
+
+Summing both sides , the RHS is a telescopic sum
+
+\begin{align*}
+\sum_{t=1}^T g_t^\top(x_t-x) &\leq \frac{1}{2\eta_T} \br*{\norm*{x_{1}-x}^2 - \norm*{x_T-x}^2 } +\sum_{t=1}^T \frac{\eta_t}{2} \norm*{g_t}^2 \\
+& \leq  \frac{1}{2\eta_T} D^2 + \frac{1}{2} \sum_{t=1}^T \eta_t \norm*{g_t}^2
+\end{align*}
+To conclude, notice that the LHS is $\sum_{t=1}^T g_t^\top(x_t-x) = \Reg_T(x)$. We proved it is bounded by the RHS  for any $x \in \Kcal$, therefore the bound holds also for $\Reg_T = \max_{x \in \Kcal} \Reg_T(x)$.
+
+\paragraph{(b)}
+
+\begin{align*}
+\Reg_T &\leq \frac{1}{2\eta_T} D^2 + \frac{1}{2} \sum_{t=1}^T \eta_t \norm*{g_t}^2 \\
+& \leq \frac{GD\sqrt{T}}{\sqrt{2}} + \frac{D}{2\sqrt{2}G} \sum_{t=1}^T  G^2 \frac{1}{\sqrt{t}}  \\
+& \leq  \frac{GD\sqrt{T}}{\sqrt{2}} + \frac{G D}{2\sqrt{2}} \int_{t=0}^{T} \frac{1}{\sqrt{t}}  dt  \\
+& =  \frac{GD\sqrt{T}}{\sqrt{2}} + \frac{G D}{\sqrt{2}G}  \sqrt{T} \\
+& = 2 G D  \sqrt{T}
+\end{align*}
+
+\paragraph{(c)}
+We need to prove
+\begin{align*}
+\sum_{i=1}^n \frac{a_i}{\sqrt{\sum_{j=1}^{i} a_j}} \leq 2 \sqrt{\sum_{i=1}^n a_i}
+\end{align*}
+
+For $n=1$ the inequality holds.
+Let's assume it holds for $n$ and prove for $n+1$.
+
+
+\begin{align*}
+\sum_{i=1}^{n+1} a_i 
+&= a_{n+1} + \sum_{i=1}^{n} a_i\\
+&\stackrel{(1)}{\geq}  a_{n+1} + \br*{\sum_{i=1}^n \frac{a_i}{2\sqrt{\sum_{j=1}^{i}} a_j}}^2\\
+&\stackrel{(2)}{\geq} \br*{\sqrt{a_{n+1}} +\sum_{i=1}^n \frac{a_i}{2\sqrt{\sum_{j=1}^{i}} a_j}}^2 \\
+&= \br*{\sqrt{a_{n+1}}-  \frac{a_{n+1}}{2\sqrt{\sum_{j=1}^{n+1}} a_j} +\sum_{i=1}^{n+1} \frac{a_i}{2\sqrt{\sum_{j=1}^{i}} a_j}}^2 \\
+& =\br*{\sqrt{a_{n+1}} \br*{1 - \underbrace{\frac{\sqrt{a_{n+1}}}{2\sqrt{\sum_{j=1}^{n+1}} a_j} }_{\leq 1}} +\sum_{i=1}^{n+1} \frac{a_i}{2\sqrt{\sum_{j=1}^{i}} a_j}}^2 \\
+& \geq \br*{\sum_{i=1}^{n+1} \frac{a_i}{2\sqrt{\sum_{j=1}^{i}} a_j}}^2
+\end{align*}
+Where (1) is due to the induction assumption, (2) is due to the Pythagorean theorem.
+Taking square root on both sides leads to the conclusion.
+
+\paragraph{(d)}
+\begin{align*}
+\Reg_T &\leq  \frac{1}{2\eta_T} D^2 + \frac{1}{2} \sum_{t=1}^T \eta_t \norm*{g_t}^2 \\
+& =   \frac{1}{2}  \frac{\sqrt{2\sum_{\tau=1}^T \norm*{g_\tau}^2}}{D} D^2 + \frac{1}{2} \sum_{t=1}^T \frac{D}{\sqrt{2\sum_{\tau=1}^t \norm*{g_\tau}^2}} \norm*{g_t}^2 \\
+& \leq \frac{D}{\sqrt{2}} \sqrt{\sum_{t=1}^{T} \norm*{g_t}^2} + \frac{D}{2\sqrt{2}} 2\sqrt{\sum_{t=1}^{T} \norm*{g_t}^2} \\
+& =  \frac{2 D}{\sqrt{2}} \sqrt{\sum_{t=1}^{T} \norm*{g_t}^2}
+\end{align*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Question 4 (Learning with surrogate losses)}
+
+\paragraph{(a)}
+\begin{align*}
+\Reg_T & \leq \sum_{t=1}^T f_t(x_t) - \min_{x \in \Kcal} \sum_{t=1}^T f_t(x) \\
+& = \sum_{t=1}^T \fTilde_t(x_t) - \min_{x \in \Kcal} \sum_{t=1}^T f_t(x)  \\
+& \stackrel{(1)}{\leq} \sum_{t=1}^T \fTilde_t(x_t)- \min_{x \in \Kcal} \sum_{t=1}^T \fTilde_t(x) \\
+& \leq C \sqrt{T}
+\end{align*}
+Where we used the properties of the surrogate loss.
+Inequality (1) is because replacing $f$ with $\fTilde$ is ensured to decrease the minimal value.
+
+\paragraph{(b)}
+The approximation $\fTilde$ used by OGD for convex losses is 
+\begin{equation*}
+    \fTilde_t(x) := f_t(x_t) + \nabla f_t(x_t)^\top (x-x_t).
+\end{equation*}
+
+It is easy to see it satisfies $\fTilde_t(x_t)=f_t(x_t)$  and  $\fTilde_t(x)\leq f_t(x), \forall x \in \Kcal$ due to the gradient inequality for convex functions.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \clearpage
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+
+
+
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

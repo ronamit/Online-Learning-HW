@@ -1,0 +1,263 @@
+\documentclass{article}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\setlength{\parskip}{1em}
+
+% \usepackage[colorinlistoftodos]{todonotes}
+
+% Additional Packages
+\usepackage[round]{natbib}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\usepackage{wrapfig}
+\usepackage{amssymb}
+\usepackage{subfigure}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{amsthm}
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{mathtools}
+\usepackage{thmtools}
+\usepackage{thm-restate}
+\usepackage[title]{appendix}
+\usepackage{comment}
+\usepackage{dsfont}
+\usepackage{times}
+\usepackage{float}
+\usepackage{natbib}
+\usepackage{thmtools}
+\usepackage{thm-restate}
+
+\newtheorem{corollary}{Corollary}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% macros
+
+% Math Operators
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\Argmin}{Argmin}
+\DeclareMathOperator*{\Argmax}{Argmax}
+
+% Comments
+\newcommand{\nm}[1]{\textcolor{red}{\{Nadav: #1\}}}
+\newcommand{\ra}[1]{\textcolor{blue}{\{Ron: #1\}}}
+
+%  Parenthesis
+% macros
+\DeclarePairedDelimiter\br{(}{)}% ( )
+\DeclarePairedDelimiter\brs{[}{]}% [ ]
+\DeclarePairedDelimiter\brc{\{}{\}}% { }
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}% | |
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}% || ||
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}% | |
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}% || ||
+\DeclarePairedDelimiter\innorm{\langle}{\rangle}% < >
+
+% text in eq
+\newcommand{\textrel}[2]{\stackrel{\textit{\text{#1}}}{#2} }
+\newcommand{\ntext}[1]{{\text{\normalfont#1}}}
+
+\def\eqdef{:=}
+\def\VAR{\mathrm{Var}}
+\def\Regret{\mathrm{Regret}}
+% \newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\sign}{\ntext{sign}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Kcal}{\mathcal{K}}
+\newcommand{\Reg}{\text{Reg}}
+\newcommand{\RegPlus}[1]{{ \brs*{\Reg_{t-1}(#1)}_{+} }}
+\newcommand{\fTilde}{\tilde{f}}
+\newcommand{\Atot}{A_{\ntext{tot}}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Final Project: Introduction to Online Learning}
+\author{Ron Amit, 300804770 }
+
+\begin{document}
+
+\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{abstract}
+\ra{
+    A short abstract, summarizing the entire survey.
+    }
+    This project summarizes and compares two recent papers on solving Reinforcement Learning (RL) in the generative model setting, using on-line learning methods \citep{cheng2020reduction, jin20efficiently}.
+    Both papers use a saddle-point formulation of the RL problem and employ Stochastic Mirror Decent.
+    Compared to prior art, both papers remove restrictive assumptions and show improved performance guarantees. 
+    To conclude, we discuss how additional online-learning methods can lead to new algorithms with improved guarantees. 
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Reinforcement Learning (RL) discusses a setting in which an agent interacts with an environment at discrete time-steps, selecting actions that affect the distributions of the agent's next state and a reward signal.
+The most common model used in RL is a Markov Decision Process (MDP), in which those distributions depend only on the current state and selected action.
+We will also focus on stationary Markovian policies, in which the action distribution depends only on the state.
+
+In this project, we focus on the generative model setting of RL.
+In this setting, during the learning phase, the agent can select both state and action at each time-step (while the final performance of the policy is evaluated as usual).
+While this setting may seem unrealistic, it is still of interest, not only as a simplification of the standard RL model. 
+In many RL applications, learning can be done via a simulator where the learning algorithm can select both state and action at each learning step (e.g., robotics, video games etc.).
+RL algorithms for the generative model setting can also be used to reduce time-complexity in approximate planing problems, where the learner has access to the full model, but an accurate solution is intractable.
+
+In this report, we will focus on RL problems with a  $\gamma$-discounted return objective which is covered in both \citet{cheng2020reduction}  and \citet{jin20efficiently}  (\citet{jin20efficiently} also studies the average-reward objective).
+This problem has a know lower bound  of $\tilde{O}\br{\Atot} $
+
+stochastic value-iteration (Sidford
+et al., 2018a) or Q-learning (Wainwright, 2019). If
+
+
+
+\begin{enumerate}
+    \item focus on discounted MDPs
+    \item  - mention lower bound (Azar'12)
+    \item - mention Wang '17 - both papers remove the ergodicity assumption from previous works (cite [Wang '17] and say what is the assumption.
+\end{enumerate}
+
+
+ 
+ 
+\ra{
+Introduce the main topic of your assigned paper(s). Try to put it into the
+context of online learning and explain how it relates to topics covered in our lectures.
+Brie
+y mention the high-level results and explain the significance of the results (such as
+improvement over prior work).
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Problem setup}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\ra{
+For this and the next two parts ("Main results" and "Proofs"), you can use
+the lecture notes as examples. For problem setup, you should describe the problems using
+necessary notation. Once again, you are not asked to cover everything in the paper, so only
+describe in detail what you plan to cover in this short survey.
+}
+
+\subsection{RL with generative model}
+
+
+
+
+\subsection{Saddle-Point Formulation}
+
+\begin{enumerate}
+    \item  LP formulation - primal dual 
+    \item Saddle-point formulation (why use this?) -  Lagranginn /min-max/saddle-point
+    \item  minimize single objective (duality -gap) with two variables v and mu together (why is it better than standard LP) 
+\end{enumerate}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Main Results}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Application of Stochastic Mirror Decent Algorithm}
+ use Mirror Decent + guarantees in the saddle-point problem
+
+\subsection{Deriving a Policy}
+ How to  round back the policy?
+ 
+\subsection{RL Performance Guarantees}
+
+
+\ra{
+Describe the main algorithms/theorems. For algorithms, describe what they
+are doing at each step and what the key idea is behind it. For theorems, after the formal
+statement, try to explain in words what the statement really means and what the
+implications are.
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Critical Review}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ra{
+write a critical review of the paper. How relevant is the problem to machine
+learning in general. Do the assumptions make sense? How reasonable/practical are the
+assumptions and Algorithms that the paper suggests?
+}
+
+\begin{enumerate}
+    \item  * trajectory setting?
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Proofs}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ra{
+Try to distill some proofs from the paper and reproduce them in the report. Due to
+space limit, most likely you can only fit 1-2 proofs into the report, so pick the ones that you
+think are most important/interesting. If the original proofs are long and complicated, try to
+break it down into several parts (in the form of lemmas for example), and only present the
+proofs for some of these parts.
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\ra{A short conclusion, highlighting the main message again.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Open questions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\ra{
+Open questions: Identify interesting and concrete open questions in the same direction that
+are not mentioned in the papers already. Mention brie
+y what you think the potential
+approaches are to tackle these open questions and/or why you think these are hard
+problems that require new techniques beyond what the papers present.
+}
+\begin{enumerate}
+    \item using more sophisticated algs that use variance reduction \ adaptive learning rate
+developing a new method that adapts the discount factor
+\end{enumerate}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \clearpage
+
+\bibliographystyle{abbrvnat}
+\bibliography{references}
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

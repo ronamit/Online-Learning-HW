@@ -1,0 +1,333 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[colorinlistoftodos]{todonotes}
+% Additional Packages
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\usepackage{wrapfig}
+\usepackage{amssymb}
+\usepackage{subfigure}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{amsthm}
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{mathtools}
+\usepackage{thmtools}
+\usepackage{thm-restate}
+\usepackage[title]{appendix}
+\usepackage{comment}
+\usepackage{dsfont}
+\usepackage{times}
+\usepackage{float}
+\usepackage{natbib}
+\usepackage{thmtools}
+\usepackage{thm-restate}
+
+\newtheorem{corollary}{Corollary}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% macros
+
+% Math Operators
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\Argmin}{Argmin}
+\DeclareMathOperator*{\Argmax}{Argmax}
+
+% Comments
+\newcommand{\nm}[1]{\textcolor{red}{\{Nadav: #1\}}}
+\newcommand{\ra}[1]{\textcolor{blue}{\{Ron: #1\}}}
+
+%  Parenthesis
+% macros
+\DeclarePairedDelimiter\br{(}{)}% ( )
+\DeclarePairedDelimiter\brs{[}{]}% [ ]
+\DeclarePairedDelimiter\brc{\{}{\}}% { }
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}% | |
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}% || ||
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}% | |
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}% || ||
+\DeclarePairedDelimiter\innorm{\langle}{\rangle}% < >
+
+% text in eq
+\newcommand{\textrel}[2]{\stackrel{\textit{\text{#1}}}{#2} }
+\newcommand{\ntext}[1]{{\text{\normalfont#1}}}
+
+\def\eqdef{:=}
+\def\VAR{\mathrm{Var}}
+\def\Regret{\mathrm{Regret}}
+% \newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\sign}{\ntext{sign}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Kcal}{\mathcal{K}}
+\newcommand{\Reg}{\text{Reg}}
+\newcommand{\RegPlus}[1]{{ \brs*{\Reg_{t-1}(#1)}_{+} }}
+\newcommand{\fTilde}{\tilde{f}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Problem Set 2 \\ Introduction to Online Learning 048717}
+\author{Ron Amit, 300804770 }
+
+\begin{document}
+
+\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+I consulted with Nadav Merlis about all problems
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Question 1 (Hedge is an FTPL)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\paragraph{(a)}
+For any $\eta >0$ we have
+\begin{align*}
+    \Pr \br*{i_t = j} 
+    &= \Pr \br*{\argmin_{i \in [N]} \br*{L_{t-1}(i)-L_0(i)} = j} \\
+    &= \Pr \br*{\argmax_{i \in [N]} \exp \brs*{ -\eta \br*{L_{t-1}(i)-L_0(i)}} = j} \\
+    &= \Pr \br*{\argmax_{i \in [N]} \frac{\exp \br*{ -\eta L_{t-1}(i)}}{\exp \br*{-\eta L_0(i)}} }
+\end{align*}
+
+\paragraph{(b)}
+
+
+\begin{align*}
+    \Pr \br*{v(i) \leq x} 
+    &=   \Pr \br*{\exp\br*{-\eta L_0(i)} \leq x} \\
+    &=   \Pr \br*{-\eta L_0(i) \leq \log x} \\
+    &=   \Pr \br*{L_0(i) \geq - \frac{1}{\eta} \log x} \\
+    &=   1 - \Pr \br*{L_0(i) < - \frac{1}{\eta} \log x} \\ 
+    & = 1 - \exp\br*{-\exp\br*{-\eta \cdot - \frac{1}{\eta} \log x }}\\
+    &= 1 - \exp\br*{-x}
+\end{align*}
+
+\paragraph{(c)}
+
+
+\begin{align*}
+\Pr \br*{j = \argmax_{i \in [N]} \frac{a(i)}{v(i)}} 
+& = \Pr \br*{\frac{a(j)}{v(j)} \geq  \frac{a(i)}{v(i)}, \forall i \neq j} \\
+& \textrel{(i)}{=}  \int_{0}^{\infty}   p_{v(j)}(u)  \Pr \br*{\frac{a(j)}{v(j)} \geq  \frac{a(i)}{v(i)}, \forall  i \neq j| v(j)=u} d u\\
+&= \int_{0}^{\infty}   p_{v(j)}(u)  \Pr \br*{v(i) \geq u \frac{a(i)}{  a(j)  }, \forall  i \neq j} d u\\
+&\textrel{(ii)}{=}  \int_{0}^{\infty}   p_{v(j)}(u) \prod_{ i \neq j} \Pr \br*{v(i) \geq u \frac{a(i)}{ a(j)}} d u\\
+&= \int_{0}^{\infty}   p_{v(j)}(u) \prod_{ i \neq j} \brc*{1 - \Pr \br*{v(i) \leq u \frac{a(i)}{a(j)}}} d u\\
+&\textrel{(iii)}{=}  \int_{0}^{\infty}   p_{v(j)}(u) \prod_{ i \neq j} \brc*{1 - \br*{1 -  \exp\br*{ - u \frac{a(i)}{a(j)}}}} d u\\
+&= \int_{0}^{\infty}  p_{v(j)}(u)\exp\br*{ \sum_{ i \neq j}  \br*{ -u \frac{a(i)}{a(j)}}} d u\\
+&=  \int_{0}^{\infty}  p_{v(j)}(u)\exp\br*{ -u   \sum_{ i \neq j}  \br*{\frac{a(i)}{a(j)}}} d u\\
+&\textrel{(iv)}{=} \frac{1}{1+ \sum_{ i \neq j}  \br*{\frac{a(i)}{a(j)}}}\\
+& =  \frac{1}{\sum_{ i \in [N]}  \br*{\frac{a(i)}{a(j)}}} \\
+&= \frac{a(j)}{\sum_{ i \in [N]} a(i)}
+\end{align*}
+where \textit{(i)} is by the law of total probability and $p_{v(j)}(u)$ is the PDF of $v(j)$.
+In \textit{(ii)} we used the Independence of $\brc{L(i)}$ that implies $\brc{v(i)}$  are independent. And \textit{(iii)} is by \textbf{(b)}. In \textit{(iv)} we used the moment-generating function formula for the standard exponential distribution. 
+
+The FTPL strategy chooses at time $t$ the expert: $i_t = \argmin_{i \in [N]} \brc*{L_{t-1}(i) - L_0(i)}$.
+In \textbf{(a)} we saw the probability that expert $j$ is chosen is  $\Pr(i_t=j) = \Pr \br*{\argmax_{i \in [N]} \frac{\exp \br*{ -\eta L_{t-1}(i)}}{\exp \br*{-\eta L_0(i)}} } = \Pr \br*{\argmax_{i \in [N]} \frac{\exp \br*{ -\eta L_{t-1}(i)}}{v(i)} }$.
+By \textbf{(c)} we have that  $\Pr(i_t=j) = \frac{\exp\br*{-\eta L_{t-1}(j)}}{\sum_{i \in [N]} \exp\br*{-\eta L_{t-1}(i)}}$. And that is exactly Hedge's prediction.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Question 2 (General Stability Lemma)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{(a)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Since $g_2$ is locally $\sigma$-strongly-convex at $x_1$, we have 
+\begin{align*}
+    g_2(x_2) \geq g_2(x_1) + \nabla g_2(x_1)^\top (x_2 - x_1) + \frac{\sigma}{2} \norm{x_2-x_1}^2
+\end{align*}
+And since $g_1$ is convex we have 
+\begin{align*}
+    g_1(x_2) \geq g_1(x_1) + \nabla g_1(x_1)^\top (x_2 - x_1)  
+\end{align*}
+Now let's subtract the inequalities
+\begin{align*}
+    g_2(x_2) -  g_1(x_2) \geq g_2(x_1) - g_1(x_1) + \br*{\nabla g_2(x_1) - \nabla g_1(x_1)}^\top (x_2 - x_1) + \frac{\sigma}{2} \norm{x_2-x_1}^2
+\end{align*}
+Using the definition of $h$ we have
+\begin{align*}
+    g_2(x_2)  - g_2(x_1) + g_1(x_1) -  g_1(x_2) \geq   \nabla h(x_1) ^\top (x_2 - x_1)  + \frac{\sigma}{2} \norm{x_2-x_1}^2
+\end{align*}
+Now the LHS is negative since $x_1$ and $x_2$ are minimizers of $g_1$ and $g_2$ respectively.
+\begin{align*}
+     0 &\geq   \nabla h(x_1) ^\top (x_2 - x_1)  +  \frac{\sigma}{2} \norm{x_2-x_1}^2\\
+       \nabla h(x_1) ^\top (x_1 - x_2)  &\geq      \frac{\sigma}{2} \norm{x_2-x_1}^2
+\end{align*}
+
+Now we use the Generalized Cauchy–Schwartz inequality .
+\begin{align*}
+\norm*{\nabla h(x_1)}_{*}    \norm{x_2-x_1}  &\geq     \nabla h(x_1) ^\top (x_1 - x_2)    \geq    \frac{\sigma}{2} \norm{x_2-x_1}^2
+\end{align*}
+If $x_1 \neq x_2$ then
+\begin{align} \label{eq:ineq1}
+\frac{2}{\sigma} \norm*{\nabla h(x_1)}_{*}   &\geq  \norm{x_2-x_1}
+\end{align}
+When $x_1 = x_2$ the inequality also trivially holds.
+\newline\newline
+Now, for the case tat $h$ is convex. Using the gradient inequality we have
+\begin{align*}
+    h(x_2) &\geq h(x_1) + \nabla h(x_1)^\top (x_2-x_1) \\
+    h(x_1)-h(x_2) &\leq \nabla h(x_1)^\top (x_1-x_2) \textrel{(i)}{\leq} \norm*{\nabla h(x_1)}_{*}    \norm{x_2-x_1}  
+    \textrel{(ii)}{\leq} \frac{2}{\sigma} \norm*{\nabla h(x_1)}^2_{*} 
+\end{align*}
+where \textit{(i)} is by the Generalized Cauchy–Schwartz inequality, and  \textit{(ii)} is using the inequality we proved (\ref{eq:ineq1}).
+
+Now, we have that $h(x_1)-h(x_2) = g_2(x_1)-g_1(x_1)-g_2(x_2)+g_2(x_2) \geq 0$, because of the optimality of $x_1$ and $x_2$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{(b)}
+In Lecture 4, we saw that for FTRL, we have for any $x \in \Kcal$,
+\begin{align*} 
+    \Reg_T(x) \leq \frac{1}{\eta} \br*{R(x)-R(x_1)} + \sum_{t=0}^{T} \br*{f_t(x_t) - f_t(x_{t+1})}
+\end{align*}
+In our case $R(x)= \frac{1}{2} \norm{x-x_1}^2$, so we have
+\begin{align} \label{eq:RegBound}
+    \Reg_T(x) \leq \frac{1}{2 \eta} \norm{x-x_1}^2 + \sum_{t=0}^{T} \br*{f_t(x_t) - f_t(x_{t+1})}
+\end{align}
+Now we need to bound $f_t(x_t) - f_t(x_{t+1})$.
+Let's look at some $t \in [T]$.
+Notice that
+\begin{align*}
+    x_t &= \argmin_{x \in \Kcal} \sum_{\tau=1}^{t-1} f_\tau(x) + \frac{1}{2\eta} \norm{x-x_1}^2 \textrel{def}{=}  \argmin_{x \in \Kcal} g_1(x)\\
+        x_{t+1} &= \argmin_{x \in \Kcal} \sum_{\tau=1}^{t} f_\tau(x) + \frac{1}{2\eta} \norm{x-x_1}^2 \textrel{def}{=} \argmin_{x \in \Kcal} g_2(x) 
+\end{align*}
+Because the functions $f_\tau(\cdot)$ are convex, then $g_2$ is $\sigma$-strongly convex with $\sigma = \frac{1}{\eta}$ and $g_1$ is convex, we can use the result from \textbf{(a)}.
+In our case, $h(x) = g_2(x)-g_1(x) = f_t(x)$.
+So we have  
+\begin{align*}
+    0  &\leq h(x_1)-h(x_2)\leq \frac{2}{\sigma} \norm*{\nabla h(x_1)}^2_{*} \\
+    0 &\leq f_t(x_1)-f_t(x_2) \leq 2 \eta \norm*{\nabla f_t(x_1)}^2_{*} \leq   2 \eta  G^2 \\
+\end{align*}
+Now if we plug this in (\ref{eq:RegBound}) we get the desired result.
+
+We have that 
+\begin{align*}
+    \Reg_T = \max_{x \in \Kcal} \Reg_T(x) \leq \frac{1}{2 \eta} \max_{x \in \Kcal} \norm{x-x_1}^2 +  2 \eta  G^2 T =  \frac{D^2}{2\eta} + 2 \eta  G^2 T
+\end{align*}
+The optimal choice of $\eta$ that minimizes the bound is 
+$\eta = \frac{D}{2 G \sqrt{T}}$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Question 3 ((Lower Bound for OCO)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{(a)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Since $Z_t$ is independent of $\brc*{Z_1,...,Z_{t-1}}$ and $x_t$ depends only on $H_t$, then $Z_t$ and $x_t$ are independent.
+So, $\E \brs*{Z_t x_t} = \E \brs*{Z_t} \E  \brs*{x_t} =  0 \cdot \E  \brs*{x_t} = 0$.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{(b)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{align*}
+    \E \brs*{\min_{x \in \Kcal} \brc*{\sum_{t=1}^{T} Z_t x}} 
+    &\textrel{(i)}{=}  \E \brs*{\min_{x \in \Kcal} \brc*{ \abs*{\sum_{t=1}^{T} Z_t} \sign \br*{\sum_{t=1}^{T} Z_t} x}} \\
+    &=  \E \brs*{ \abs*{\sum_{t=1}^{T} Z_t} \min_{x \in \Kcal} \brc*{ \sign \br*{\sum_{t=1}^{T} Z_t} x}} \\
+    &\textrel{(ii)}{=} \E \brs*{ \abs*{\sum_{t=1}^{T} Z_t} \cdot -1} \\
+      &\textrel{(iii)}{\leq} - \frac{1}{\sqrt{3}} \sqrt{T}
+\end{align*}
+where in \textit{(i)} we use the function $\sign(w)=1$ for $w \geq 0$, else $-1$.
+In  \textit{(ii)} we use the fact that $\Kcal=[-1,1]$, so the minimum is always $-1$.
+And in \textit{(iii)} we used Khinchine's Inequality.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{(b)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+For any algorithm we have
+\begin{align*}
+    \E \brs*{\Reg_T} &=    \E \brs*{ \sum_{t=1}^{T} f_t(x_t) - \min_{x \in \Kcal} \sum_{t=1}^{T} f_t(x)} \\
+    &=  \E \brs*{ \sum_{t=1}^{T} Z_t x_t - \min_{x \in \Kcal} \sum_{t=1}^{T} Z_t x} \\
+    &=  \E \brs*{ \sum_{t=1}^{T} Z_t x_t}  -  \E \brs*{\min_{x \in \Kcal} \sum_{t=1}^{T} Z_t x} \\
+    &\textrel{(a)}{=}   0  -  \E \brs*{\min_{x \in \Kcal} \sum_{t=1}^{T} Z_t x} \\
+      &\textrel{(b)}{\geq}   \frac{1}{\sqrt{3}} \sqrt{T}
+\end{align*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{(c)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Let's look at the case that the player can choose $x \in [-D,D]$.
+Assume the adversary chooses functions the $G$-Lipschitz functions $f_t(x) = G Z_t x$, where $Z_t$ are Radamacher random variables.
+If we repeat the above analysis, we will get  
+\begin{equation*}
+     \E \brs*{\min_{x \in \Kcal} \brc*{\sum_{t=1}^{T} G Z_t x}} \leq -\frac{GD}{\sqrt{3}} \sqrt{T} 
+\end{equation*}
+So the lower bound is 
+\begin{equation*}
+ \E \brs*{\Reg_T} \geq \frac{GD}{\sqrt{3}} \sqrt{T} .
+ \end{equation*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Question 4 (Bonus Question-Khinchine's Inequality)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{(a)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+For any R.V $W,V$, using Holders inequality with $p=3,q=\nicefrac{3}{2}$ we have,
+\begin{align} \label{eq:Holder}
+    \E \brc*{\abs{WV}} \leq \br*{\E\brc*{\abs{W}^3}}^{\nicefrac{1}{3}} \br*{\E\brc*{\abs{V}^{\nicefrac{3}{2}}}}^{\nicefrac{2}{3}}.
+\end{align}
+Now, let $X$ be some R.V, and define $W=X^{\nicefrac{4}{3}}$ and 
+ $V=X^{\nicefrac{2}{3}}$.
+ So now eq. \ref{eq:Holder} becomes
+ \begin{align*} 
+    \E \brc*{\abs{X^2}} &\leq \br*{\E\brc*{\abs{X}^4}}^{\nicefrac{1}{3}} \br*{\E\brc*{\abs{X}^{1}}}^{\nicefrac{3}{2}}. \\
+   \frac{ \E \brc*{\abs{X^2}} }{\br*{\E\brc*{\abs{X}^4}}^{\nicefrac{1}{3}}} &\leq \br*{\E\brc*{\abs{X}}}^{\nicefrac{3}{2}} \\
+   \frac{\br*{ \E \brc*{X^2} }^{3/2}}{\br*{\E\brc*{X^4}}^{\nicefrac{1}{2}}} &\leq \E\brc*{\abs{X}}
+\end{align*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{(b)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+According to \textbf{(a)},
+\begin{align} \label{eq:innn}
+    \E\brc*{\abs{X}} \geq    \frac{\br*{ \E \brc*{X^2} }^{3/2}}{\br*{\E\brc*{X^4}}^{\nicefrac{1}{2}}}
+\end{align}
+Let $X = \sum_{i=1}^{n} Z_i$. 
+We have that,
+\begin{align} \label{eq:EX2}
+    \E\brc*{X^2} = \E\brc*{\br*{\sum_{i=1}^{n} Z_i}^2} 
+    = \E\brc*{\sum_{i=1}^{n} Z_i^2} + \E\brc*{\sum_{i \neq j} Z_i Z_j} = n + 0 = n,
+\end{align}
+where we used the independence of the  Radamacher random variables.
+Now we also have that
+\begin{align*} 
+    \E\brc*{X^4}  &= \E\brc*{\br*{\sum_{i=1}^{n} Z_i}^4} 
+  = \E\brc*{\sum_{i,j,k,m}  Z_i Z_j Z_k Z_m} \\
+   &= \sum_{i,j,k,m}  \E\brc*{Z_i Z_j Z_k Z_m}
+\end{align*}
+Now notice that when all indexes $(i,j,k,m)$ are different, then the summand  term is zero because of independence.
+The only cases when this term is not zero (and equal to one instead) are when we have two pairs identical indexes (e.g. $(1,1,2,2), (2,2,2,2), (1,1,1,1)$ etc.).
+The number of cases can be counted by $\frac{1}{2} {4 \choose 2} \cdot n \cdot n= 3 n^2$ (we need to choose 2 pairs out of the $(i,j,k,m)$ , then assign index to first pair and assign index to second pair, but we don't care about the order this assignment).
+
+Therefore $\E\brc*{X^4} = 3 n^2$.
+If we insert this and \ref{eq:EX2} to equation \ref{eq:innn}  we get 
+\begin{align} 
+    \E\brc*{\abs{X}} \geq    \frac{\br*{ \E \brc*{X^2} }^{3/2}}{\br*{\E\brc*{X^4}}^{\nicefrac{1}{2}}} 
+    =  \frac{\br*{ n }^{3/2}}{\br*{3n^2}^{\nicefrac{1}{2}}} 
+    = \sqrt{\frac{n}{3}}
+\end{align}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \clearpage
+\bibliographystyle{plainnat}
+\bibliography{references}
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
