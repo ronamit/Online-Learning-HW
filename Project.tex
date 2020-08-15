@@ -37,12 +37,16 @@
 \usepackage{natbib}
 \usepackage{thmtools}
 \usepackage{thm-restate}
+% Attempt to make hyperref and algorithmic work together better:
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
 
 \newtheorem{corollary}{Corollary}
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
+\newtheorem{remark}{Remark}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % macros
+
 
 % Math Operators
 \DeclareMathOperator*{\argmin}{argmin}
@@ -74,6 +78,14 @@
 \def\Regret{\mathrm{Regret}}
 % \newcommand{\norm}[1]{\left\lVert#1\right\rVert}
 
+
+\DeclareMathOperator{\Tr}{Tr}
+
+
+
+\newcommand{\Prob}{\mathbb{P}}
+
+
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\sign}{\ntext{sign}}
 \newcommand{\E}{\mathbb{E}}
@@ -81,11 +93,52 @@
 \newcommand{\Reg}{\text{Reg}}
 \newcommand{\RegPlus}[1]{{ \brs*{\Reg_{t-1}(#1)}_{+} }}
 \newcommand{\fTilde}{\tilde{f}}
+
 \newcommand{\Atot}{A_{\ntext{tot}}}
+\newcommand{\States}{\mathcal{S}}
+\newcommand{\Actions}{\mathcal{A}}
+
+\newcommand{\nSt}{{\abs{\States}}}
+\newcommand{\nAct}{{\abs{\Actions}}}
+
+\newcommand{\Pairs}{\mathcal{X}}
+\newcommand{\nPairs}{{\abs{\mathcal{X}}}}
+
+\newcommand{\Pb}{\boldsymbol{P}}
+\newcommand{\rb}{\boldsymbol{r}}
+\newcommand{\vb}{\boldsymbol{v}}
+
+\newcommand{\eb}{\boldsymbol{e}}
+
+\newcommand{\mub}{\boldsymbol{\mu}}
+\newcommand{\nub}{\boldsymbol{\nu}}
+\newcommand{\Rc}{\mathcal{R}}
+\newcommand{\vbar}{\bar{v}}
+
+
+\newcommand{\vbe}{{\vb^\epsilon}}
+\newcommand{\mube}{{\mub^\epsilon}}
+\newcommand{\mubpi}{{\mub^\pi}}
+
+
+% \newcommand{\vMax}{v_{\ntext{max}}}
+\newcommand{\vMax}{M}
+\newcommand{\onesVec}{\mathbf{1}}
+\newcommand{\Ibt}{\tilde{\textbf{I}}}
+\newcommand{\Ib}{\boldsymbol{I}}
+
+\newcommand{\initDist}{\boldsymbol{q}}
+
+\newcommand{\vecop}{\ntext{vec}}
+\newcommand{\gtild}{\tilde{\boldsymbol{g}}}
+\newcommand{\Gap}{\ntext{Gap}}
+
+\newcommand{\todo}[1]{\textcolor{brown}{\{TODO: #1\}}}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\title{Final Project: Introduction to Online Learning}
+\title{Final Project: \\ 
+Solving MDPs with Stochastic Mirror Descent}
 \author{Ron Amit, 300804770 }
 
 \begin{document}
@@ -94,12 +147,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
-\ra{
-    A short abstract, summarizing the entire survey.
-    }
-    This project summarizes and compares two recent papers on solving Reinforcement Learning (RL) in the generative model setting, using on-line learning methods \citep{cheng2020reduction, jin20efficiently}.
-    Both papers use a saddle-point formulation of the RL problem and employ Stochastic Mirror Decent.
-    Compared to prior art, both papers remove restrictive assumptions and show improved performance guarantees. 
+    This project summarizes and compares two recent papers \citep{cheng2020reduction, jin20efficiently} about solving Reinforcement Learning (RL) problems in the generative model setting, using online learning methods .
+    Both papers use a saddle-point formulation of the RL problem and employ Stochastic Mirror Descent.
+    Compared to the prior art, both papers remove restrictive assumptions and show improved performance guarantees. 
     To conclude, we discuss how additional online-learning methods can lead to new algorithms with improved guarantees. 
 \end{abstract}
 
@@ -109,140 +159,462 @@
 
 Reinforcement Learning (RL) discusses a setting in which an agent interacts with an environment at discrete time-steps, selecting actions that affect the distributions of the agent's next state and a reward signal.
 The most common model used in RL is a Markov Decision Process (MDP), in which those distributions depend only on the current state and selected action.
-We will also focus on stationary Markovian policies, in which the action distribution depends only on the state.
+We will also focus on stationary Markovian policies, in which the action distribution depends only on the current state.
 
-In this project, we focus on the generative model setting of RL.
-In this setting, during the learning phase, the agent can select both state and action at each time-step (while the final performance of the policy is evaluated as usual).
+We focus on the generative model setting of RL, with finite state and action spaces and an infinite time horizon.
+In the generative setting, during the learning phase, the agent can select both state and action at each time-step (while the final performance of the policy is evaluated as usual as in the trajectory setting).
 While this setting may seem unrealistic, it is still of interest, not only as a simplification of the standard RL model. 
-In many RL applications, learning can be done via a simulator where the learning algorithm can select both state and action at each learning step (e.g., robotics, video games etc.).
-RL algorithms for the generative model setting can also be used to reduce time-complexity in approximate planing problems, where the learner has access to the full model, but an accurate solution is intractable.
-
-In this report, we will focus on RL problems with a  $\gamma$-discounted return objective which is covered in both \citet{cheng2020reduction}  and \citet{jin20efficiently}  (\citet{jin20efficiently} also studies the average-reward objective).
-This problem has a know lower bound  of $\tilde{O}\br{\Atot} $
-
-stochastic value-iteration (Sidford
-et al., 2018a) or Q-learning (Wainwright, 2019). If
+In many RL applications, learning can be done via a simulator where the learning algorithm can select both state and action at each learning step (e.g., robotics, video games, etc.).
+RL algorithms for the generative model setting can also be used to reduce time-complexity in approximate planning problems, where the learner has access to the full model, but an accurate solution is intractable.
 
 
+In this report, we will focus on RL problems with a  $\gamma$-discounted return objective which is covered in both \citet{cheng2020reduction}  and \citet{jin20efficiently}  (note that \citet{jin20efficiently} also studies the average-reward objective).
+This problem has a known lower bound  of $\tilde{\Omega}\br*{\frac{\nSt \nAct}{(1-\gamma)^3 \epsilon^2}}$ samples to achieve an $\epsilon$-approximate optimal policy \citep{azar2012sample}, where $\nSt$ and $\nAct$ are the cardinalities  of the state and action sets. 
+We use to $\tilde{\Omega}$ and $\tilde{O}$ notations to omit logarithmic factors.
+Recent works showed the lower bound can be achieved using variants of stochastic value-iteration \citep{sidford2018near}  and Q-learning \citep{wainwright2019variance}.
 
-\begin{enumerate}
-    \item focus on discounted MDPs
-    \item  - mention lower bound (Azar'12)
-    \item - mention Wang '17 - both papers remove the ergodicity assumption from previous works (cite [Wang '17] and say what is the assumption.
-\end{enumerate}
+As we will see in section \ref{sect:setup}, we can formulate the problem as a Linear Programming (LP) problem. 
+\citet{wang2017randomized} suggested solving the LP formulation by solving a mini-max (saddle-point) problem of the Lagrangian that connects the primal and dual forms.
+The advantage of this approach is in allowing the use of well studied stochastic optimization algorithms.  
+Wang's approach achieved $\tilde{O}\br*{\frac{\nSt \nAct}{(1-\gamma)^6 \epsilon^2}}$ sample-complexity in the general case, and $\tilde{O}\br*{\tau_{\ntext{erg}} \frac{\nSt \nAct}{(1-\gamma)^4 \epsilon^2}}$ sample-complexity under a certain $\tau_{\ntext{erg}}$-ergodicity assumption.
+The works of \citet{cheng2020reduction}  and \citet{jin20efficiently} independently showed improved algorithms based on Stochastic Mirror Decent (SMD) with sample-complexity of  $\tilde{O}\br*{ \frac{\nSt \nAct}{(1-\gamma)^4 \epsilon^2}}$, without any ergodicity assumptions.
+
+In class, we covered the Online Mirror Descent (OMD) algorithm for deterministic optimization problems.
+The SMD algorithm naturaly extends OMD to the stochastic optimization setting by using a stochastic gradient estimations (the same way SGD extends GD).
+The SMD algorithm is one of the simplest online learning algorithms that can be applied to a stochastic optimization problem.
+Both papers claim that the new formulation of the RL problem opens a way for using additional tools from the online learning literature to develop new RL algorithms with theoretical guarantees. 
 
 
- 
- 
-\ra{
-Introduce the main topic of your assigned paper(s). Try to put it into the
-context of online learning and explain how it relates to topics covered in our lectures.
-Brie
-y mention the high-level results and explain the significance of the results (such as
-improvement over prior work).
-}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Problem setup}
+\section{Problem setup} \label{sect:setup}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\ra{
-For this and the next two parts ("Main results" and "Proofs"), you can use
-the lecture notes as examples. For problem setup, you should describe the problems using
-necessary notation. Once again, you are not asked to cover everything in the paper, so only
-describe in detail what you plan to cover in this short survey.
-}
+% \ra{
+% For this and the next two parts ("Main results" and "Proofs"), you can use
+% the lecture notes as examples. For problem setup, you should describe the problems using
+% necessary notation. Once again, you are not asked to cover everything in the paper, so only
+% describe in detail what you plan to cover in this short survey.
+% }
 
-\subsection{RL with generative model}
+\paragraph{MDP model.}
+The MDP model we consider consists of a tuple $(\States, \Actions, \Pb, \Rc, \initDist, \gamma)$, where $\States$ is a finite state set $\States=\brc{1,\dots,\nSt}$,  $\Actions$ is a finite action set $\Actions=\brc{1,\dots,\nAct}$,  and 
+$q$ is the initial state distribution.
+For brevity, we we will define the set of all state-action pairs
+\footnote{Note that \citet{jin20efficiently} defined this set in a non-standard way as $\Actions$.}
+as $\Pairs := \States \times \Actions$ (note that $\nPairs = \nSt \nAct$ ).
+
+Given $x=(s,a) \in \Pairs$, the probability of transitioning from  current state $s$ when taking action $a$ to a state $s'$ is given by
+ $\brs{\Pb}_{x, s'}:=\Prob(s'|s,a)$.
+$\Rc_{x}$ for $x=(s,a)$ is the reward distribution given taking action $a$ at state $s$, and $\gamma \in (0,1)$ is the discount factor.
+We will assume the reward signals are in the range $[0,1]$.
+We denote the mean of the reward distribution with the vector $\rb$, where  $\brs{\rb}_{x} = \E \Rc_{x} , \forall x \in \Pairs$.
+Since we consider a learning setting, $\Pb$ and $\Rc$ are unknown to the learner.
+
+\paragraph{Trajectories.}
+We assume the agent interacts with the MDP using a stationary Markovian policy $\pi(\cdot|s) \in \Delta_\States$, where $\Delta_\States$ is the $\States$-simplex.
+Given a policy, a trajectory $\tau^{\pi} = (s_0, a_0,r_0, s_1, a_1, r_1, \dots)$ is generated in the following way.
+The initial state $s_0$ is drawn from $\initDist$.
+In each time-step $t=0,1,2,\dots$, the agent's action $a_t$ is drawn from the policy $\pi(\cdot|s_t)$ and then the next state $s_{t+1}$ is drawn according to 
+$\brs{\Pb}_{(s_t,a_t),\cdot}$ and the reward is drawn from $\Rc_{(s_t,a_t)}$.
 
 
 
+\paragraph{Generative model assumption.}
+Under the generative model assumption, the learner can choose a state and action pair $(s,a)$ and observe a sample of the next state and reward signal $(s',r')$ from an oracle (or a ``simulator'').
 
-\subsection{Saddle-Point Formulation}
+\paragraph{Problem goal.}
+The objective of the learner is to provide a policy $\pi$, with maximal expected discounted return $\vbar^\pi := \E_{\tau^{\pi}} \sum_{t=0}^{\infty} \gamma^t r_t$.
+The goal is to obtain a policy that is $\epsilon$-close to the optimal solution, with fewest samples possible. 
+Formally, we will obtain a bound on the number of samples $T_\epsilon$ needed to ensure that $\vbar^\pi  \geq  \vbar^* - \epsilon$, for any $\epsilon > 0$, where $\vbar^*  := \sup_{\pi'} \vbar^{\pi'}$.
 
-\begin{enumerate}
-    \item  LP formulation - primal dual 
-    \item Saddle-point formulation (why use this?) -  Lagranginn /min-max/saddle-point
-    \item  minimize single objective (duality -gap) with two variables v and mu together (why is it better than standard LP) 
-\end{enumerate}
+\paragraph{More notations.}
+The value function is defined as the expected discounted return given initial state $s$, under some policy $\pi$, $\vb^\pi_s:=\E_{s_0=s, \pi} \sum_{t=0}^{\infty} \gamma^t r_t$.
+The optimal value function is defined as $\vb^*_s:= \sup_{\pi} \E_{s_0=s, \pi} \sum_{t=0}^{\infty} \gamma^t r_t$.
+
+Notice that the discounted return, given any initial state, is bounded in $[0,\vMax]$,
+ where we denote $\vMax:=(1-\gamma)^{-1}$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Preliminaries} \label{sect:perliminaries}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+\paragraph{Linear programming formulation.}
+
+In MDPs, it is well known that the there exists a unique optimal value function
+$\vb^* \in [0, \vMax]^\nSt$ that satisfies the Bellman optimality equation $\vb_s = \max_{a \in \Actions} \brc*{ \rb_{s,a} + \gamma \sum_{s'} \Pb_{(s,a),s'} \vb_{s'})}, \forall s \in \States$.
+Note that $ \vbar^* = \E_{s\sim q} \vb^*(s) = \initDist^\top \vb^*$.
+Therefore, to evaluate $\vbar^*$ we can find  $\vb^*$.
+
+We can formulate the Bellman equation as the following LP problem
+\footnote{$\vb^*$ is the smallest (component-wise) of all vectors $\vb$ that satisfy the constraint in the primal problem (i.e, $\vb^*_{s,a} \leq \vb_{s,a}$, for all state-actions). See \citet{bertsekas1996neuro}, Sect. 2.2.4.}
+
+\begin{equation} \label{eq:Primal}
+    \min_{\vb \in [0,\vMax]^{\nSt}} (1-\gamma) \initDist^\top  \vb, \quad \ntext{subject to}, (\Ibt - \gamma \Pb)  \vb - \rb \geq 0,
+\end{equation}
+
+where $\Ibt$ is a $\nPairs \times \nSt$ matrix whose  each row vector is an indicator of the sate $s$ of the row index $x=(s,a)$.
+
+% and $\Ibt :=  \Ib_{\nSt \times \nSt} \otimes \onesVec_{\nAct} \in \R ^{\nSt \times \nAct \times \nSt}$ ($\Ib_{\nSt \times \nSt}$ is an identity matrix,  $\onesVec_{\nAct}$ is the $\nAct \times 1$ ones vector).
+
+The dual formulation of the problem can be written as 
+
+  \begin{equation} \label{eq:Dual_comp}
+    \max_{\mub \in \Delta_{\nPairs}}  \mub^\top \rb, \quad \ntext{subject to},  (1-\gamma) \initDist + \gamma  \Pb \mub = \onesVec \mub,
+\end{equation}
+where $\Delta_{\nPairs}$ is the space of $\nPairs$-simplex vectors, and $\onesVec$ is a $\nSt \times \nPairs$ all-ones matrix. 
+
+
+%  \begin{equation} \label{eq:Dual_comp}
+%     \max_{\mub \in \Delta^{\nSt \times \nAct}}  \sum_{s,a} \rb_{s,a} \mub_{s,a}, \quad \ntext{subject to},  (1-\gamma) \initDist(s') + \gamma \sum_{s,a} \Pb_{s,a,s'} \mub_{s,a} = \sum_{a} \mub_{s',a} \forall s' \in \States,
+% \end{equation}
+
+% We can re-write (\ref{eq:Dual_comp}) in a matrix form:
+%  \begin{equation} \label{eq:Dual_comp_mat}
+%     \max_{\mub \in \Delta^{\nSt \times \nAct}}  \rb^\top \mub, \quad \ntext{subject to}, 
+%     (1-\gamma) \initDist =\mub \onesVec_{\nAct}^\top - \gamma \vecop(\Pb^\top) \vecop{(\mu)},  
+% \end{equation}
+
+% where $\vecop(\cdot)$ is the vectorization (flattening) transformation (for a $m\times n$ matrix, $X$, we define $\vecop(X):=\sum_{i=1}^{n} e_i \otimes X e_i$, where $e_i$ is the $i$-th canonical basis vector of $\R^n$ and  $\otimes$ is the Kronecker product).
+% When applied to a $k \times m \times n$ tensor,  $\vecop(\cdot)$ flattens the two last dimensions to produce a $k \times m n$ matrix.
+% Note we made some corrections to the matrix form of \citet{jin20efficiently} (see footnote).
+
+% where $\Ibt :=  \Ib \otimes \onesVec \in \R ^{\nSt \times \nAct \times \nSt}$ ($\Ib \in R^{\nSt \times \nSt}$ is an identity matrix,  $\onesVec \in \R^{\nAct}$ is all-ones vector, and $\otimes$ is the Kronecker product).
+
+
+
+If the variable $\mub$ satisfies the constraint, it can be interpreted as the ``the discounted state-action frequencies", i.e,   $\mub_{(s,a)} = (1-\gamma) \sum_{t=0}^{\infty} \gamma^t \Prob(s_t=s,a_t=a)$, where the probability is given the initial state distribution $\initDist$ and fixed policy $\pi(a|s) := \frac{\mub_{(s,a)}}{\sum_{a'} \mub_{(s,a')}}$.
+Notice that the optimal value in both the primal and dual problems is $(1-\gamma)\vbar^*$.
+
+
+\paragraph{Saddle-point formulation.}
+We can recast the LP problems as a bilinear saddle-point (minimax) problem, using the Lagrangian that connects the primal and dual problems.
+\begin{equation} \label{eq:minimax}
+    \min_{\vb \in [0,\vMax]^{\nSt}}  \max_{\mub \in \Delta_{\nPairs}} f(\vb, \mub),
+\end{equation}
+% where $ f(\vb, \mub) := (1-\gamma) \initDist^\top \vb + \Tr \brs*{\mub^\top \br*{\br*{\gamma \Pb - \Ibt}\vb +\rb }}$.
+where 
+% \begin{equation}
+%     f(\vb, \mub) := (1-\gamma) \initDist^\top \vb +  \br*{\vecop(\mub)}^\top \vecop \br*{\br*{\gamma \Pb - \Ibt}\vb +\rb },
+% \end{equation}
+% and $\vecop(\cdot)$ is the vectorization (flattening) transformation (for a $\nSt \times \nAct$ matrix, $X$ we define $\vecop(X):=\sum_{i=1}^{\nAct} B_i X e_i$, where $e_i$ is the $i$-th canonical basis vector of $\R^{\nAct}$, $B_i := e_i \otimes \Ib_{\nSt \times \nSt}$ and $\otimes$ is the Kronecker product).
+\begin{equation} \label{eq:minimax_obj}
+    f(\vb, \mub) := (1-\gamma) \initDist^\top \vb +  \mub^\top \br*{ \br*{\gamma \Pb - \Ibt} \vb +\rb},
+\end{equation}
+
+For a a feasible solution $(\vb,\mub)$, the duality-gap is defined as 
+\begin{equation}
+\Gap(\vb,\mub):= \max_{\mub' \in \Delta_{\nPairs}} f(\vb, \mub') -  \min_{\vb' \in [0,\vMax]^{\nSt}} f(\vb', \mub)
+\end{equation}
+We say that a feasible solution $(\vb,\mub)$ is an expected $\epsilon$-approximate optimal solution if $\E \Gap(\vb,\mub) \leq \epsilon$.
+
+We note that a minimax problem with bilinear objective can treated as a sequential two-player game, as we have seen in class.
+In the game, players take turns in applying steps of an online algorithm with respect to the current objective and the variable controlled by the player ($\mub$ or $\vb$). We have seen in class that this ``repeated play" converges to the minimax solution if no-regret algorithms are used.
+
+Remember that $\Pb$ and $\rb$ are unknown to the learner.
+In the next section, we will introduce a learning algorithm that obtains an approximate solution to this problem by sampling from the MDP generative model.
+Using this solution, we will show how to derive a policy and its performance guarantees in the original RL problem.
+
+% \begin{remark}
+% \citet{jin20efficiently}  mistakenly regarded $\mub$ is a $\nAct \times 1$ vector in the preliminaries and optimization sections (or use a non-standard notations), but used it as $\nSt \times \nAct$ matrix when deriving a policy. In this report we correct this mismatch.
+% \end{remark} 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Main Results}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Application of Stochastic Mirror Decent Algorithm}
- use Mirror Decent + guarantees in the saddle-point problem
-
-\subsection{Deriving a Policy}
- How to  round back the policy?
- 
-\subsection{RL Performance Guarantees}
+% \ra{
+% Describe the main algorithms/theorems. For algorithms, describe what they
+% are doing at each step and what the key idea is behind it. For theorems, after the formal
+% statement, try to explain in words what the statement really means and what the
+% implications are.
+% }
 
 
-\ra{
-Describe the main algorithms/theorems. For algorithms, describe what they
-are doing at each step and what the key idea is behind it. For theorems, after the formal
-statement, try to explain in words what the statement really means and what the
-implications are.
-}
+Both \citet{jin20efficiently} and \citet{cheng2020reduction} follow similar high-level road-map:
+\textit{(i)} Formulate the saddle-point formulation of the RL problem as convex optimization.
+\textit{(ii)} Suggesting algorithm for solving the convex optimization problem.
+\textit{(iii)} Suggesting a way to derive a policy and proving its guarantees in the original RL problem.
+
+Step \textit{(i)} is similar in both \citet{jin20efficiently} and \citet{cheng2020reduction} (and also in \citet{wang2017randomized}).
+However, steps  \textit{(ii)}  and  \textit{(iii)} differ between the two papers.
+In this report, we will focus on the work of \citet{jin20efficiently}. In section \ref{sect:CriticReview}, we will discuss the main differences in \citet{cheng2020reduction}.
+
+
+% \paragraph{Convex optimization formulation.}
+% \citet{jin20efficiently} directly optimize the minimax objective (\ref{eq:minimax}). Since the objective is bilinear, the minimax theorem says that the min and max operators are interchangeable.
+% This allows direct application of standard gradient based algorithms (without the problem incurred in two-player games such as cycles).
+
+
+\paragraph{Optimization algorithm.}
+To obtain an approximate solution to the minimax problem, \citet{jin20efficiently} use the Stochastic Mirror Descent (SMD) algorithm (Alg. \ref{alg:SMD}).
+There are two degrees of freedom for an algorithm designer when using SMD.
+The first is choosing a convex regularization function for the Bregman divergence and the second is choosing a gradient estimator, ideally with small variance.
+
+Since the domains of the $\vb$ and $\mub$ variables are different, the algorithms use two different regularization functions. 
+Since the $\mub$ variable is in the simplex domain the Entropy function is used as regularizer, for which  the Bregman divergence is the KL-divergence.
+While for $\vb$ variable, the standard $\ell_2$ norm is used ($\vb$ is  in $[0,M]^{\nSt}$) and so the Bregman divergence is the $\ell_2$ distance.
+In Algorithm \ref{alg:SMD}, steps 12 and 13, we use the closed form update corresponding to each of the divergences (as we have seen in class).
+
+
+
+
+\begin{algorithm}[t]
+  \caption{SMD based algorithm for Discounted MDPs}
+  \label{alg:TD0}
+\begin{algorithmic}[1]
+  \STATE {{\bfseries Input:} Generative model of the MDP}  
+   \STATE {{\bfseries Hyper-parameters:} Step-size $\eta^v, \eta^\mu$ number of iterations $T$}
+   \STATE {{\bfseries Initialize:} $\mub_0(x) := \frac{1}{\nPairs}, \forall x \in \Pairs$, and $\vb_0(s) := 0, 
+   \forall s \in \States. $ }
+    \FOR{ $t=1,1,..., T$}
+       \STATE \# $\vb$ gradient estimation.
+       \STATE  Sample $x=(s,a)$ according to $\mub$, and $s'$ according to $\Pb_{x,\cdot}$
+       \STATE $\gtild^{v}_{t-1} := (1-\gamma) q + \gamma \eb_{s'} -  \eb_{s}$  
+       \STATE \# $\mub$ gradient estimation.
+       \STATE  Sample $x=(s,a)$ uniformly from $\Pairs$, and $s'$ according to $\Pb_{x,\cdot}$
+        % \STATE    $\gtild^{\mu}_{t-1} = \textbf{0}_{\nSt \times \nAct}$ \quad # initialize with zeros
+       \STATE $\gtild^{\mu}_{t-1} := \nPairs \br*{\vb_s-\gamma \vb_{s'}- \rb_{x}} \eb_{x}$  
+       \STATE Stochastic mirror descent steps (+ projection)
+      \STATE $\vb_t := \Pi_{[0,1]^{\nSt}} \brc*{\vb_{t-1} - \eta^{v} \gtild^{v}_{t-1}} $ \label{algstep:v_update}
+      \STATE $\mub_t := \Pi_{\Delta_{\nPairs}} \brc*{\mub_{t-1} \odot \exp \br*{- \eta^{v} \gtild^{v}_{t-1}}}  $
+    \ENDFOR
+     \STATE {{\bfseries Return:}}$ \frac{1}{T} \sum_{t=1}^{T} (\vb_t, \mub_t)$
+\end{algorithmic} \label{alg:SMD}
+\end{algorithm}
+
+\begin{remark}
+\citet{jin20efficiently} did not specify how to choose an initialization in Alg. \ref{alg:SMD}.
+However, as We have seen in class we chose to initialize with the minimum of the regularization function.
+\end{remark} 
+
+
+The gradient estimators used in Algorithm \ref{alg:SMD} are based on \citet{carmon2017lower} (Sect. 4.1.1), where the authors designed efficient stochastic estimators that have low-variance under the corresponding local norms.
+The next lemma formulates the variance guarantees of these estimators, which will be critical for proving the overall performance of Alg. \ref{alg:SMD}.
+
+\begin{lemma} \label{lem:grad}
+The gradient estimators of Algorithm \ref{alg:SMD}
+% $\gtild^{v}_{t-1} := (1-\gamma) q + \gamma \eb_{s'} -  \eb_{s}$  and  $\gtild^{\mu}_{t-1} := \nPairs \br*{\vb_s-\gamma \vb_{s'}- \rb_{x}} \eb_{x}$ 
+are unbiased and have the following second moment bounds, $\E \norm{\gtild^v (\vb, \mub)}_2^2 \leq 2$, and $\E \norm{\gtild^\mu (\vb, \mub)}_w^2 \leq 9(M^2+1)\nPairs$ for all $w$-weighted $\ell_2$ norms (local norms),   $ w \in \Delta^\nPairs$, and $(\vb, \mub)\in [0,M]^\nSt \times \Delta^\nPairs$.
+\end{lemma}
+
+Based on Lemma \ref{lem:grad} and following standard analysis of Mirror Descent \citep{shalev2011online},  we can get the following guarantee on the solution of the saddle-point problem.
+
+\begin{theorem} \label{thm:saddle_point}
+Given problem (\ref{eq:minimax}),  Algorithm $\ref{alg:SMD}$ with choice of parameters $\eta^v \leq \frac{\epsilon}{4 \cdot 2}$ and $\eta^\mu \leq \frac{\epsilon}{4  \cdot  9(M^2+1)\nPairs}$ outputs an expected $\epsilon$-approximate optimal solution after  $T \geq \max \brc*{\frac{\nSt  (8 M)^2}{\epsilon \eta^v}, \frac{8 \log \nPairs}{\epsilon \eta^\mu}}$ iterations.
+\end{theorem}
+
+
+\begin{corollary}
+    The sample-complexity of  Algorithm \ref{alg:SMD} in solving the saddle-point problem (\ref{eq:minimax}) is $O \br*{(1-\gamma)^2 \nPairs \epsilon^{-2} \log(\nPairs)}$.
+\end{corollary}
+    
+    
+
+
+
+\paragraph{Performance guarantees in the original RL problem.}
+Next, we ask, how we can derive a policy from the saddle-point solution, and what are performance guarantees in the original RL problem.
+As discussed in Section \ref{sect:perliminaries}, the dual variable $\mub$ can be seen as ``the discounted state-action frequencies".
+% (discounted sum of the probability to be in each state-action pair when playing with the policy associated with the solution). 
+Using this intuition, we can define a policy as 
+\begin{equation} \label{eq:policy_def}
+    \pi(a|s) := \frac{\mub_{s,a}}{\sum_{a'} \mub_{s,a'}}.
+\end{equation}
+This derivation is a common practice, and also used in \citet{cheng2020reduction}.
+However, \citet{jin20efficiently} shows a novel analysis method of the guarantees of this policy.
+
+The next theorem shows that an $\epsilon$-approximate solution to the saddle-point problem translates to an $\epsilon(1-\gamma)^{-1}$-approximate optimal policy. See proof in Section \ref{sect:proofs}.
+\begin{theorem}
+ \label{thm:pol_gurantee}
+Given  $\epsilon$-approximate solution $(\vbe,\mube)$ to the saddle point problem (\ref{eq:minimax}), the policy $\pi$ derived using Eq. (\ref{eq:policy_def}) it holds that $\E \vbar^{\pi}\geq \vbar^* - \frac{3 \epsilon}{1-\gamma} $
+\end{theorem}
+
+Combining Theorems \ref{thm:saddle_point} and \ref{thm:pol_gurantee} we get at the following desired guarantee.
+
+\begin{corollary}
+Using Alg. \ref{alg:SMD} and deriving a policy using (\ref{eq:policy_def}) gives an $\epsilon$-optimal solution to the RL problem using $O((1-\gamma)^{-3} \nPairs \epsilon^{-2} \log(\nPairs))$ samples, or ,in other notations, $\tilde{O}((1-\gamma)^{-3} \nSt \nAct \epsilon^{-2})$ samples.
+\end{corollary}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Critical Review}
+\section{Critical Review} \label{sect:CriticReview}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\ra{
-write a critical review of the paper. How relevant is the problem to machine
-learning in general. Do the assumptions make sense? How reasonable/practical are the
-assumptions and Algorithms that the paper suggests?
-}
+The reviewed papers study the RL problem with a generative model. This problem has a wide interest in both theory and practice, as discussed in the introduction.
+Both papers remove the limiting assumption of ergodicity of a previous work in the saddle-point approach \citep{wang2017randomized}.
+Furthermore, the papers show improved techniques of using online learning algorithms to solve RL problems. The authors mention that they use a relatively simple online-algorithm (SMD) and that there is room for improvement inf future work. 
 
-\begin{enumerate}
-    \item  * trajectory setting?
-\end{enumerate}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Proofs}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Although both papers tackle the same problem and with similar techniques, there are some notable differences \textit{(i)} \citet{jin20efficiently} write the SMD update in a more explicit and clear form. Their algorithm directly optimizes the minimax problem (as we have seen in class for game theory), while in \citet{cheng2020reduction} the SMD update minimizes the duality-gap.  \textit{(ii)} The gradient estimators in  \citet{jin20efficiently} are simpler
+ \textit{(iii)}  The sample-complexity proof in \citet{jin20efficiently} is simpler (does not require martingale concentration).
+  \textit{(iv)}  The \citet{cheng2020reduction} does not need to know the initial distribution $\initDist$, while  in \citet{jin20efficiently} it is needed in the algorithm.
+    \textit{(v)} \citet{jin20efficiently} also discusses other topics not covered in the report - solving MDPs under constraints and solving the RL problem in the average-reward criterion.
+    \textit{(vi)}
+    \citet{cheng2020reduction} shows also a simplex extendsion to linear function approximation.
 
-\ra{
-Try to distill some proofs from the paper and reproduce them in the report. Due to
-space limit, most likely you can only fit 1-2 proofs into the report, so pick the ones that you
-think are most important/interesting. If the original proofs are long and complicated, try to
-break it down into several parts (in the form of lemmas for example), and only present the
-proofs for some of these parts.
-}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\ra{A short conclusion, highlighting the main message again.}
+In this report we surveyed two recent papers about solving the RL problem in the generative model setting, using a saddle-point formulation and the SMD algorithm.
+Both papers achieve improved sample-complexity using fewer assumptions compared to previous work that uses the saddle-point formulation \citep{wang2017randomized}.
+The few notable differences between the papers are discussed in section \ref{sect:CriticReview}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Open questions}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\ra{
-Open questions: Identify interesting and concrete open questions in the same direction that
-are not mentioned in the papers already. Mention brie
-y what you think the potential
-approaches are to tackle these open questions and/or why you think these are hard
-problems that require new techniques beyond what the papers present.
-}
-\begin{enumerate}
-    \item using more sophisticated algs that use variance reduction \ adaptive learning rate
-developing a new method that adapts the discount factor
-\end{enumerate}
+% \ra{
+% Open questions: Identify interesting and concrete open questions in the same direction that
+% are not mentioned in the papers already. Mention brie
+% y what you think the potential
+% approaches are to tackle these open questions and/or why you think these are hard
+% problems that require new techniques beyond what the papers present.
+% }
+
+I believe there are few interesting open questions.
+
+\begin{itemize}
 
 
+\item Can the performance be improved using more sophisticated online algorithms?
+The authors mention the direction of using variance reduction and control variate techniques.
+I think another interesting direction is using algorithms with adaptive hyper-parameters (learning rate and discount factor). In stochastic optimization, the AdaGrad algorithm can improve performance by adapting the learning rate.
+In RL, previous work \citep{petrik2009biasing, jiang2015dependence, amit2020discount} has shown that using an RL algorithms with smaller discount factor than the specified in the problem, can significantly improve generalization from finite-sample.
+Still, I am not aware of algorithms that use an adaptive discount factor.
+The ideas in the presented framework can lead to adaptive algorithms with improved sample-complexity (as AdaGrad improves upon GD).
+
+\item Notice that we only need the $\mub$ component of the output of Algorithm \ref{alg:SMD} to set the output policy (\ref{eq:policy_def}). Can we take advantage of this fact by modifying the algorithm to have higher accuracy in the $\mub$ variable on the expense of lowered accuracy in the $\vb$ variable?
+
+\item 
+Can this framework be extended beyond the generative model setting?
+The generative setting is a relatively simple RL setting, which requires access to a simulator.  
+Future work can use the tools in the paper to analyze the trajectory setting -  in which data is gathered by rolling out from an initial state.
+This setting has a more challenging exploration problem - the learner can not select a state directly, but instead, choose a behavioral policy that explores well.
+
+
+
+% \item use accelerated algorithms for minimax biliniear optimization 
+% \citep{song2020breaking}.
+% or see \citep{chen2014optimal} and \citet{carmon2019variance}
+
+
+
+\end{itemize}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Appendix: Proofs} \label{sect:proofs}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+In this section, we provide a proof for Theorem \ref{thm:pol_gurantee}.
+We will write the proof and slightly different way while correcting minor errors and clarifying the steps.
+
+The idea of the proof is to bound the RL objective in terms of the difference of the state-visitation frequency of the derived policy, $\mubpi$, and of the dual variable solution  $\mube$, and using the guarantees on the saddle-point solution.
+We will also use the following Lemma from \citet{jin20efficiently}.
+\begin{lemma} \label{lem:v_star}
+If $(\vbe, \mube)$ is an $\epsilon$-approximate optimal solution to the saddle-point problem (\ref{eq:minimax}), then for the optimal $\vb^*$ we have,
+\begin{equation}  
+    \E {\mube}^\top  \brs*{(\Ibt - \gamma \Pb) \vb^* - r} \leq \epsilon.
+\end{equation}
+\end{lemma}
+
+This Lemma is proved in \citet{jin20efficiently} - Appendix D.2.
+Now we turn to prove Theorem \ref{thm:pol_gurantee}.
+
+\begin{proof}[Proof of Theorem \ref{thm:pol_gurantee}]
+Since $(\vbe, \mube)$ is an $\epsilon$-approximate optimal solution to the saddle-point problem, we have by definition that 
+\begin{equation} \label{eq:gap_bound}
+    \E \Gap(\vbe, \mube) = \E \brs*{\max_{\mub  \in \Delta_{\nPairs}} f(\vbe, \mub ) -  \min_{\vb  \in [0,\vMax]^{\nSt}} f(\vb, \mube) }\leq \epsilon 
+\end{equation}
+Note that $(\vbe, \mube)$ is random (since it is an output of a stochastic optimization algorithm).
+
+% Or, 
+% \begin{equation} 
+%     \max_{\mub' \in \Delta_{\nPairs}}  \min_{\vb' \in [0,\vMax]^{\nSt}}  f(\vb, \mub') - f(\vb', \mub) \leq \epsilon
+% \end{equation}
+Let $(\vb^*,\mub^*)$ be the optimal solution of the saddle-point problem.
+From (\ref{eq:gap_bound}) we have that
+\begin{equation} \label{eq:gap_bound2}
+    \E \brs*{\max_{\mub  \in \Delta_{\nPairs}} f(\vbe, \mub ) -  f(\vb^*, \mube) }\leq \epsilon 
+\end{equation}
+Therefore 
+\footnote{Note that Eq. (\ref{eq:gap_bound3}) is different than (\citet{jin20efficiently}-First inequality in proof of Lemma 8). I suspect there is an error there.
+ }
+\begin{equation} \label{eq:gap_bound3}
+    \E \brs*{ f(\vbe, \mube ) -  f(\vb^*, \mube) }\leq \epsilon 
+\end{equation}
+
+ Plugging in (\ref{eq:minimax_obj}) we get
+\begin{equation} \label{eq:gap_bound4}
+    \E \brs*{ (1-\gamma) \initDist^\top +  \mube^\top  \br*{\gamma \Pb - \Ibt}  } \br*{\vbe-\vb^*} \leq \epsilon 
+\end{equation}
+
+
+We define
+ $\mubpi_{(s,a)} := (1-\gamma) \sum_{t=0}^{\infty} \gamma^t \Prob^\pi(s_t=s,a_t=a)$
+ (the ``discounted state-action frequency" under policy $\pi$).
+ 
+ 
+ From this definition, it is follows immediately that 
+ \begin{equation}
+     \E \brs*{(1-\gamma)\initDist + \gamma \Pb \mubpi} = \mubpi.
+ \end{equation}
+ 
+ Or equivalently,
+  \begin{equation} \label{eq:mupi_stat}
+     \E \brs*{(1-\gamma)\initDist + \br{\gamma \Pb  - \Ib} \mubpi} = 0.
+ \end{equation}
+ 
+ Combining this with (\ref{eq:gap_bound4}) we get
+ \begin{equation} \label{eq:gap_bound6}
+    \E \brs*{ ( \mube -\mubpi)^\top  \br*{\gamma \Pb - \Ibt}  } \br*{\vbe-\vb^*} \leq \epsilon 
+\end{equation}
+Therefore, since $\vbe, \vb^* \in [0,M]^\nSt$ we have that
+ \begin{equation} \label{eq:gap_bound7}
+    \E \norm*{ ( \mube -\mubpi)^\top  \br*{\gamma \Pb - \Ibt}  }_1  \leq \frac{\epsilon}{M}
+\end{equation}
+
+And using the fact that $\norm*{\br*{\gamma \Pb - \Ibt}^{-1}}_\infty \leq M$ (Lemma 17 in \citet{jin20efficiently}) we can also conclude that 
+\begin{equation} \label{eq:gap_bound8}
+    \E \norm*{ ( \mube -\mubpi)^\top  }_1  \leq \frac{M \epsilon}{M} = \epsilon.
+\end{equation}
+
+
+
+
+ 
+Now we can rewrite the RL objective (expected discounted sum of rewards) under the policy $\pi$.
+\begin{align*}
+     \E (1-\gamma) \vbar^\pi& =  \E (\mubpi)^\top \rb \\
+    &\textrel{{(i)}}{=}   \E (\mubpi)^\top \rb + \E \brc*{(1-\gamma)\initDist^\top + \mubpi^\top \br{\gamma \Pb^\top  - \Ib} } \vb^*  \\
+    & =   (1-\gamma)\initDist^\top  \vb^* + \E \brc*{ \mubpi^\top \brs*{\br{\gamma \Pb^\top  - \Ib} \vb^* +\rb}} \\
+     & =  (1-\gamma) \vbar^* + \E \brc*{ (\mubpi - \mube)^\top \brs*{\br{\gamma \Pb^\top  - \Ib} \vb^* +\rb}}  +  \E \brc*{ \mube^\top \brs*{\br{\gamma \Pb^\top  - \Ib} \vb^* +\rb}} \\
+    &\textrel{{(ii)}}{\geq}  (1-\gamma) \vbar^* + \E \brc*{ (\mubpi - \mube)^\top \brs*{\br{\gamma \Pb^\top  - \Ib} \vb^* +\rb}}  - \epsilon \\
+    &\textrel{{(iii)}}{\geq}  (1-\gamma) \vbar^* - 
+    \E \norm*{ (\mubpi - \mube)^\top \br{\gamma \Pb^\top  - \Ib}}_1 \norm*{\vb^*}_\infty -  \E \norm{\mubpi - \mube}_1 \norm{\rb}_\infty - \epsilon \\
+      &\textrel{{(iv)}}{\geq}  (1-\gamma) \vbar^* - 
+    \E \norm*{ (\mubpi - \mube)^\top \br{\gamma \Pb^\top  - \Ib}}_1 M-  \E \norm*{\mubpi - \mube}_1 - \epsilon\\
+  &\textrel{{(v)}}{\geq}  (1-\gamma) \vbar^* - 
+   \frac{\epsilon}{M} M-  \epsilon - \epsilon =  (1-\gamma) \vbar^* - 3 \epsilon.
+\end{align*}
+Where in \textit{(i)} we used (\ref{eq:mupi_stat}), in  \textit{(ii)} we used Lemma \ref{lem:v_star},  \textit{(iii)}  is by Hölder's inequality, in \textit{(iv)} we used the fact that $\norm{\rb}_\infty \leq 1$, and $\norm{\vb^*}_\infty \leq M$ , and finally in \textit{(v)}  we used  (\ref{eq:gap_bound7}) and  (\ref{eq:gap_bound8}).
+
+Dividing the inequality by $(1-\gamma)$ concludes the proof.
+
+\end{proof}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % \clearpage
 
 \bibliographystyle{abbrvnat}
 \bibliography{references}
+
 \end{document}
 
 
